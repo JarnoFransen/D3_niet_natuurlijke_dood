@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+    <title>Pie Multiples with Nesting</title>
+    <script type="text/javascript" src="http://d3js.org/d3.v2.js"></script>     
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?2.4.5"></script>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.csv.js?2.4.5"></script>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.layout.js?2.4.5"></script>
+    <link rel="stylesheet" href="css/styles.css">
+  </head>
+  <body>
+    <div id="header-container">
+      <div id="header">
+        <h1>Doodsoorzaken</h1>
+        <h2>Cijfers doodsoorzaak niet natuurlijke dood</h2>
+      </div>
+    </div>      
+    <div id="bar-container">
+      <div id="bar">     
+        <ul style="list-style-type: none; padding-bottom: 40px;">
+          <li><div style="width: 20px; height: 20px; background-color: #3dbbeb; float: left; margin-left: -15px;"></div><p style="float: left; margin: 0; margin-left: 10px;">Ophangen</p></li>
+          <li><div style="width: 20px; height: 20px; background-color: #fcb120; float: left; margin-left: 20px;"></div><p style="float: left; margin: 0; margin-left: 10px;">Doodslaan</p></li>
+          <li><div style="width: 20px; height: 20px; background-color: #dd5b43; float: left; margin-left: 20px;"></div><p style="float: left; margin: 0; margin-left: 10px;">Vuurwapen</p></li>
+          <li><div style="width: 20px; height: 20px; background-color: #ada737; float: left; margin-left: 20px;"></div><p style="float: left; margin: 0; margin-left: 10px;">Steekwapen</p></li>
+          <li><div style="width: 20px; height: 20px; background-color: #64bfb6; float: left; margin-left: 20px;"></div><p style="float: left; margin: 0; margin-left: 10px;">Slagwapen</p></li>
+          <li><div style="width: 20px; height: 20px; background-color: #f5f0ae; float: left; margin-left: 20px;"></div><p style="float: left; margin: 0; margin-left: 10px;">Overige</p></li>
+          <li><div style="width: 20px; height: 20px; background-color: #404040; float: left; margin-left: 20px;"></div><p style="float: left; margin: 0; margin-left: 10px;">Onbekend</p></li>
+        </ul>
+        <ul style="list-style-type: none; padding-bottom: 20px;">
+          <li><div style="width: 20px; height: 20px; background-color: #E1E1E1; float: left; margin-left: 250px;"></div><p style="float: left; margin: 0; margin-left: 10px;">2008</p></li>
+          <li><div style="width: 20px; height: 20px; background-color: #D6D6D6; float: left; margin-left: 20px;"></div><p style="float: left; margin: 0; margin-left: 10px;">2009</p></li>
+          <li><div style="width: 20px; height: 20px; background-color: #CCCCCC; float: left; margin-left: 20px;"></div><p style="float: left; margin: 0; margin-left: 10px;">2010</p></li>
+          <li><div style="width: 20px; height: 20px; background-color: #C2C2C2; float: left; margin-left: 20px;"></div><p style="float: left; margin: 0; margin-left: 10px;">2011</p></li>
+        </ul>        
+      </div>      
+    </div>
+      <script type="text/javascript">    
+        var w = 960,
+        h = 500
+
+        // create canvas
+        var svg = d3.select("#bar").append("svg:svg")
+        .attr("class", "chart")
+        .attr("width", w)
+        .attr("height", h )
+        .append("svg:g")
+        .attr("transform", "translate(10,470)");
+
+        x = d3.scale.ordinal().rangeRoundBands([0, w-50])
+        y = d3.scale.linear().range([0, h-50])
+        z = d3.scale.ordinal().range(["#999999", "777777", "555555", "333333"])
+
+        console.log("RAW MATRIX---------------------------");
+      // 4 columns: ID,c1,c2,c3,c4
+        var matrix = [
+            [ 1, 11, 14, 12, 12],
+            [ 2, 14, 18, 17, 18],
+            [ 3, 37, 41, 33, 49],
+            [ 4, 57, 53, 61, 43],
+            [ 5, 12, 7, 10, 12],
+            [ 6, 12, 14, 8, 5],
+            [ 7, 7, 7, 3, 4]          
+        ];
+        console.log(matrix)
+
+        console.log("REMAP---------------------------");
+        var remapped =["c1","c2","c3","c4"].map(function(dat,i){
+            return matrix.map(function(d,ii){
+                return {x: ii, y: d[i+1] };
+            })
+        });
+        console.log(remapped)
+
+        console.log("LAYOUT---------------------------");
+        var stacked = d3.layout.stack()(remapped)
+        console.log(stacked)
+
+        x.domain(stacked[0].map(function(d) { return d.x; }));
+        y.domain([0, d3.max(stacked[stacked.length - 1], function(d) { return d.y0 + d.y; })]);
+
+        // show the domains of the scales              
+        console.log("x.domain(): " + x.domain())
+        console.log("y.domain(): " + y.domain())
+        console.log("------------------------------------------------------------------");
+
+        // Add a group for each column.
+        var valgroup = svg.selectAll("g.valgroup")
+        .data(stacked)
+        .enter().append("svg:g")
+        .attr("class", "valgroup")
+        .style("fill", function(d, i) { return z(i); })
+        .style("stroke", "FFF")
+
+        // Add a rect for each date.
+        var rect = valgroup.selectAll("rect")
+        .data(function(d){return d;})
+        .enter().append("svg:rect")
+        .attr("x", function(d) { return x(d.x); })
+        .attr("y", function(d) { return -y(d.y0) - y(d.y); })
+        .attr('opacity', 0.3)
+        .attr("height", function(d) { return y(d.y); })
+        .attr("width", x.rangeBand() - 30)
+      </script>     
+
+    <div id="colors" style="margin: 0 auto; width: 960px; padding-left: 60px;">
+      <div style="width: 100px; height: 20px; background-color: #3dbbeb; z-index: -999; position: absolute; margin-left: 10px; margin-top: -20px;"></div>
+      <div style="width: 100px; height: 20px; background-color: #fcb120; z-index: -999; position: absolute; margin-left: 140px; margin-top: -20px;"></div>       
+      <div style="width: 100px; height: 20px; background-color: #dd5b43; z-index: -999; position: absolute; margin-left: 270px; margin-top: -20px;"></div>  
+      <div style="width: 100px; height: 20px; background-color: #ada737; z-index: -999; position: absolute; margin-left: 400px; margin-top: -20px;"></div>
+      <div style="width: 100px; height: 20px; background-color: #64bfb6; z-index: -999; position: absolute; margin-left: 530px; margin-top: -20px;"></div>
+      <div style="width: 100px; height: 20px; background-color: #f5f0ae; z-index: -999; position: absolute; margin-left: 660px; margin-top: -20px;"></div>
+      <div style="width: 100px; height: 20px; background-color: #404040; z-index: -999; position: absolute; margin-left: 790px; margin-top: -20px;"></div>  
+    </div>
+    <div id="pie-container">                 
+    <div id="pie">        
+
+      <script type="text/javascript">
+
+        // Load the flight data asynchronously.
+        d3.csv("flights.csv", function(flights) {
+
+          // Define the margin, radius, and color scale. Colors are assigned lazily, so
+          // if you want deterministic behavior, define a domain for the color scale.
+          var m = 10,
+              r = 100,
+              z = d3.scale.ordinal().range(["#3dbbeb","#fcb120","#dd5b43","#f1f5e8","#64bfb6","#f5f0ae","#404040"]);
+            //.domain(d3.range([3]));
+
+          // Define a pie layout: the pie angle encodes the count of flights. Since our
+          // data is stored in CSV, the counts are strings which we coerce to numbers.
+          var pie = d3.layout.pie()
+              .value(function(d) { return +d.count; })
+              .sort(function(a, b) { return b.count - a.count; });
+
+          // Define an arc generator. Note the radius is specified here, not the layout.
+          var arc = d3.svg.arc()
+              .innerRadius(r / 2)
+              .outerRadius(r);
+
+          // Nest the flight data by originating airport. Our data has the counts per
+          // airport and carrier, but we want to group counts by aiport.
+          var airports = d3.nest()
+              .key(function(d) { return d.jaar; })
+              .entries(flights);
+
+          // Insert an svg element (with margin) for each airport in our dataset. A
+          // child g element translates the origin to the pie center.
+          var svg = d3.select("#pie").selectAll("div")
+              .data(airports)
+            .enter().append("div") // http://code.google.com/p/chromium/issues/detail?id=98951
+              .style("display", "inline-block")
+              .style("width", (r + m) * 2 + "px")
+              .style("height", (r + m) * 2 + "px")
+            .append("svg:svg")
+              .attr("width", (r + m) * 2)
+              .attr("height", (r + m) * 2)
+            .append("svg:g")
+              .attr("transform", "translate(" + (r + m) + "," + (r + m) + ")");
+
+          // Add a label for the airport. The `key` comes from the nest operator.
+          svg.append("svg:text")
+              .attr("dy", ".35em")
+              .attr("text-anchor", "middle")
+              .text(function(d) { return d.key; });
+
+          // Pass the nested per-airport values to the pie layout. The layout computes
+          // the angles for each arc. Another g element will hold the arc and its label.
+          var g = svg.selectAll("g")
+              .data(function(d) { return pie(d.values); })
+            .enter().append("svg:g");
+
+          // Add a colored arc path, with a mouseover title showing the count.
+          g.append("svg:path")
+              .attr("d", arc)
+              .style("fill", function(d) { return z(d.data.carrier); })
+            //.append("svg:title")
+              //.text(function(d) { return d.data.carrier + ": " + d.data.count; });
+
+          // Computes the label angle of an arc, converting from radians to degrees.
+          function angle(d) {
+            var a = (d.startAngle + d.endAngle) * 90 / Math.PI - 90;
+            return a > 90 ? a - 180 : a;
+          }
+        });
+
+      </script>
+    </div>
+    </div>
+    <div id="footer-container">
+      <div id="footer">
+        <p>Bron: CBS - Doodsoorzaken; niet-natuurlijke dood, diverse kenmerken (inwoners), 21 Augustus 2012.</p>
+      </div>    
+    </div>
+  </body>
+</html>
